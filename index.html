@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2022.7">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1">&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1">&lt;title&gt;Draft League Table&lt;/title&gt;</p>
+<p class="p1">&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;</p>
+<p class="p1">&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>body { font-family: Arial, sans-serif; padding: 10px; background: #f9f9f9; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>h2 { text-align: center; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>th { background: #eee; position: sticky; top: 0; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.up { color: green; font-weight: bold; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.down { color: red; font-weight: bold; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.nochange { color: gray; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>@media (max-width: 600px) {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>table, thead, tbody, th, td, tr { display: block; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>thead tr { display: none; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>tr { margin-bottom: 10px; border: 1px solid #ddd; padding: 5px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>td { text-align: right; padding-left: 50%; position: relative; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>td::before {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>content: attr(data-label);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>position: absolute;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>left: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font-weight: bold;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>text-align: left;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1">&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1">&lt;h2&gt;Draft League Table&lt;/h2&gt;</p>
+<p class="p1">&lt;table id="leagueTable"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;thead&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;tr&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;Manager&lt;/th&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;Team&lt;/th&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;GW Points&lt;/th&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;NewDraft Points (Live)&lt;/th&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;PreviousDraft Points&lt;/th&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;Total Points&lt;/th&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;Rank&lt;/th&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;Movement&lt;/th&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/tr&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/thead&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;tbody&gt;&lt;/tbody&gt;</p>
+<p class="p1">&lt;/table&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;script&gt;</p>
+<p class="p1">const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQBEDZp2fIHa82CvjG6sbE0dDlpiZHHQa-5JWo2q3hb-yoBxu0yntj3emupWsEPI7eTNKN66dY5QEA7/pub?gid=0&amp;single=true&amp;output=csv"; // Replace with your published Google Sheet CSV link</p>
+<p class="p2"><br></p>
+<p class="p1">function loadTable() {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>fetch(csvUrl)</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.then(response =&gt; response.text())</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.then(text =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const rows = text.trim().split('\n').map(r =&gt; r.split(','));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const tbody = document.querySelector('#leagueTable tbody');</p>
+<p class="p1"><span class="Apple-converted-space">      </span>tbody.innerHTML = '';</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// Build row objects for sorting</p>
+<p class="p1"><span class="Apple-converted-space">      </span>let dataList = [];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>for (let i = 1; i &lt; rows.length; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let row = rows[i];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>dataList.push({</p>
+<p class="p1"><span class="Apple-converted-space">          </span>Manager: row[0],</p>
+<p class="p1"><span class="Apple-converted-space">          </span>Team: row[1],</p>
+<p class="p1"><span class="Apple-converted-space">          </span>GW: Number(row[2]) || 0,</p>
+<p class="p1"><span class="Apple-converted-space">          </span>NewDraft: Number(row[3]) || 0,</p>
+<p class="p1"><span class="Apple-converted-space">          </span>PrevDraft: Number(row[4]) || 0,</p>
+<p class="p1"><span class="Apple-converted-space">          </span>Total: Number(row[5]) || 0,</p>
+<p class="p1"><span class="Apple-converted-space">          </span>Rank: Number(row[6]) || 0,</p>
+<p class="p1"><span class="Apple-converted-space">          </span>Movement: row[7] || '0'</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// Sort by Total Points descending</p>
+<p class="p1"><span class="Apple-converted-space">      </span>dataList.sort((a,b) =&gt; b.Total - a.Total);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>// Render rows</p>
+<p class="p1"><span class="Apple-converted-space">      </span>dataList.forEach(d =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const tr = document.createElement('tr');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>Object.keys(d).forEach((key, idx) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const td = document.createElement('td');</p>
+<p class="p1"><span class="Apple-converted-space">          </span>td.setAttribute('data-label', key);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>td.textContent = d[key];</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (key === 'Movement') {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (d[key].startsWith('+')) td.className = 'up';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>else if (d[key].startsWith('-')) td.className = 'down';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>else td.className = 'nochange';</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>tr.appendChild(td);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p1"><span class="Apple-converted-space">        </span>tbody.appendChild(tr);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>})</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.catch(err =&gt; console.error('Error loading CSV:', err));</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// Initial load</p>
+<p class="p1">loadTable();</p>
+<p class="p2"><br></p>
+<p class="p1">// Auto-refresh every 5 minutes (300,000 ms)</p>
+<p class="p1">setInterval(loadTable, 300000);</p>
+<p class="p1">&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
