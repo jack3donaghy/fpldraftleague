@@ -15,6 +15,6 @@ window.CONFIG = {
   LOGO: 'fpl%20image%20logo.png', // the logo file already in this repo
 
   PTP_COUNT_IN_PLAY: true, // true: "to play" includes matches in progress; false: only not kicked off
-  MIN_LOADER_MS: 1500,     // keep the loading screen up at least this long
+  MIN_LOADER_MS: 2500,     // keep the loading screen up at least this long
   REFRESH_SECONDS: 60      // how often live data refreshes during a gameweek
 };
