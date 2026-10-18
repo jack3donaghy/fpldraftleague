@@ -59,7 +59,7 @@
     players: {}, events: [],
     managers: [], standings: [],
     histories: {}, picks: {}, live: {}, fixtures: {}, fixtureList: {},
-    prevTotals: {}, phases: [],
+    prevTotals: {}, phases: [], kitCodes: {},
     bonusMemo: {},
     view: { entry: null, gw: null },
     benchData: null, benchLoading: false,
@@ -81,6 +81,7 @@
           S.players[e.id] = { id: e.id, name: e.web_name, type: e.element_type, team: e.team };
         });
         S.events = Array.isArray(bs.events) ? bs.events : ((bs.events && bs.events.data) || []);
+        (bs.teams || []).forEach(function (t) { if (t.code != null) S.kitCodes[t.id] = t.code; });
         setLeague(league);
         var jobs = S.managers.map(function (m) {
           return get('entry/' + m.entryId + '/history')
@@ -147,15 +148,23 @@
     (old.standings || []).forEach(function (s) { S.prevTotals[byLid[s.league_entry]] = s.total || 0; });
   }
 
+  // FPL's main game supplies the official month groupings and each club's kit code.
   function loadPhases() {
-    var cached = lsGet('tokyo:phases');
-    if (cached && cached.at > Date.now() - 864e5 && cached.list.length) { S.phases = cached.list; return Promise.resolve(); }
+    var cached = lsGet('tokyo:fplmeta');
+    if (cached && cached.at > Date.now() - 864e5 && cached.list.length) {
+      S.phases = cached.list;
+      Object.keys(cached.codes || {}).forEach(function (k) { if (S.kitCodes[k] == null) S.kitCodes[k] = cached.codes[k]; });
+      return Promise.resolve();
+    }
     return get('fpl/bootstrap-static').then(function (bs) {
+      var codes = {};
+      (bs.teams || []).forEach(function (t) { if (t.code != null) codes[t.id] = t.code; });
+      Object.keys(codes).forEach(function (k) { if (S.kitCodes[k] == null) S.kitCodes[k] = codes[k]; });
       var list = (bs.phases || []).filter(function (p) { return p.name !== 'Overall'; })
         .map(function (p) { return { name: p.name, start: p.start_event, stop: p.stop_event }; });
       if (!list.length) throw new Error('no phases');
       S.phases = list;
-      lsSet('tokyo:phases', { at: Date.now(), list: list });
+      lsSet('tokyo:fplmeta', { at: Date.now(), list: list, codes: codes });
     }).catch(function () {
       // Fallback: group gameweeks by the month of their deadline.
       var months = [];
@@ -532,11 +541,20 @@
     $('#pitch-wrap').innerHTML = html;
   }
 
-  function shirt(type, bench) {
+  function plainShirt(type, bench, hidden) {
     var fill = bench ? '#F3F1EC' : (type === 1 ? '#3DF5A0' : '#FFFFFF');
     var stroke = bench ? '#8E8892' : '#2B0A31';
-    return '<svg width="40" height="36" viewBox="0 0 40 36" aria-hidden="true"><path d="M12 2 4 8l4 8 3-2v20h18V14l3 2 4-8-8-6q-8 5-16 0Z" fill="' +
-      fill + '" stroke="' + stroke + '" stroke-width="1.5"/></svg>';
+    return '<svg class="kit-fallback" width="40" height="36" viewBox="0 0 40 36" aria-hidden="true"' + (hidden ? ' hidden' : '') +
+      '><path d="M12 2 4 8l4 8 3-2v20h18V14l3 2 4-8-8-6q-8 5-16 0Z" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.5"/></svg>';
+  }
+
+  // The club's real kit from FPL (goalkeepers get the keeper kit); plain shirt if the image fails.
+  function shirt(p, bench) {
+    var code = S.kitCodes[p.team];
+    if (code == null || !C.KIT_URL) return plainShirt(p.type, bench, false);
+    var src = C.KIT_URL.replace('{code}', code + (p.type === 1 ? '_1' : ''));
+    return '<img class="kit" src="' + esc(src) + '" alt="" aria-hidden="true" loading="lazy" ' +
+      'onerror="this.hidden=true;this.nextElementSibling.removeAttribute(\'hidden\')">' + plainShirt(p.type, bench, true);
   }
 
   function playerTile(id, gw, calc, isBench) {
@@ -552,7 +570,7 @@
     else if (i.status === 'playing') pill = '<span class="pill pill-live">● ' + pts + ' pts' + bonusTxt + '</span>';
     else pill = '<span class="pill pill-done">' + pts + ' pts</span>';
     var label = esc(i.p.name) + ', ' + (TYPES[i.p.type] || '') + (isBench ? ', bench' : '');
-    return '<div class="pl' + (off ? ' off' : '') + '" title="' + label + '">' + shirt(i.p.type, isBench) +
+    return '<div class="pl' + (off ? ' off' : '') + '" title="' + label + '">' + shirt(i.p, isBench) +
       '<span class="nm">' + esc(i.p.name) + '</span>' + pill + '</div>';
   }
 
