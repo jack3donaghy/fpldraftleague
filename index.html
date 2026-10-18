@@ -1,122 +1,134 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2022.7">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FPL Draft 3: Tokyo Draft</title>
+<meta name="theme-color" content="#2B0A31">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="fpl%20image%20logo.png">
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1">&lt;meta charset="UTF-8"&gt;</p>
-<p class="p1">&lt;title&gt;Draft League Table&lt;/title&gt;</p>
-<p class="p1">&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;</p>
-<p class="p1">&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>body { font-family: Arial, sans-serif; padding: 10px; background: #f9f9f9; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>h2 { text-align: center; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>th { background: #eee; position: sticky; top: 0; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.up { color: green; font-weight: bold; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.down { color: red; font-weight: bold; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>.nochange { color: gray; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>@media (max-width: 600px) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>table, thead, tbody, th, td, tr { display: block; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>thead tr { display: none; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>tr { margin-bottom: 10px; border: 1px solid #ddd; padding: 5px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>td { text-align: right; padding-left: 50%; position: relative; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>td::before {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>content: attr(data-label);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>position: absolute;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>left: 10px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-weight: bold;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>text-align: left;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>}</p>
-<p class="p1">&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1">&lt;h2&gt;Draft League Table&lt;/h2&gt;</p>
-<p class="p1">&lt;table id="leagueTable"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;thead&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;tr&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;Manager&lt;/th&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;Team&lt;/th&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;GW Points&lt;/th&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;NewDraft Points (Live)&lt;/th&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;PreviousDraft Points&lt;/th&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;Total Points&lt;/th&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;Rank&lt;/th&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;th&gt;Movement&lt;/th&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/tr&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/thead&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;tbody&gt;&lt;/tbody&gt;</p>
-<p class="p1">&lt;/table&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;script&gt;</p>
-<p class="p1">const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQBEDZp2fIHa82CvjG6sbE0dDlpiZHHQa-5JWo2q3hb-yoBxu0yntj3emupWsEPI7eTNKN66dY5QEA7/pub?gid=0&amp;single=true&amp;output=csv"; // Replace with your published Google Sheet CSV link</p>
-<p class="p2"><br></p>
-<p class="p1">function loadTable() {</p>
-<p class="p1"><span class="Apple-converted-space">  </span>fetch(csvUrl)</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.then(response =&gt; response.text())</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.then(text =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const rows = text.trim().split('\n').map(r =&gt; r.split(','));</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const tbody = document.querySelector('#leagueTable tbody');</p>
-<p class="p1"><span class="Apple-converted-space">      </span>tbody.innerHTML = '';</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>// Build row objects for sorting</p>
-<p class="p1"><span class="Apple-converted-space">      </span>let dataList = [];</p>
-<p class="p1"><span class="Apple-converted-space">      </span>for (let i = 1; i &lt; rows.length; i++) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>let row = rows[i];</p>
-<p class="p1"><span class="Apple-converted-space">        </span>dataList.push({</p>
-<p class="p1"><span class="Apple-converted-space">          </span>Manager: row[0],</p>
-<p class="p1"><span class="Apple-converted-space">          </span>Team: row[1],</p>
-<p class="p1"><span class="Apple-converted-space">          </span>GW: Number(row[2]) || 0,</p>
-<p class="p1"><span class="Apple-converted-space">          </span>NewDraft: Number(row[3]) || 0,</p>
-<p class="p1"><span class="Apple-converted-space">          </span>PrevDraft: Number(row[4]) || 0,</p>
-<p class="p1"><span class="Apple-converted-space">          </span>Total: Number(row[5]) || 0,</p>
-<p class="p1"><span class="Apple-converted-space">          </span>Rank: Number(row[6]) || 0,</p>
-<p class="p1"><span class="Apple-converted-space">          </span>Movement: row[7] || '0'</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>// Sort by Total Points descending</p>
-<p class="p1"><span class="Apple-converted-space">      </span>dataList.sort((a,b) =&gt; b.Total - a.Total);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>// Render rows</p>
-<p class="p1"><span class="Apple-converted-space">      </span>dataList.forEach(d =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const tr = document.createElement('tr');</p>
-<p class="p1"><span class="Apple-converted-space">        </span>Object.keys(d).forEach((key, idx) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>const td = document.createElement('td');</p>
-<p class="p1"><span class="Apple-converted-space">          </span>td.setAttribute('data-label', key);</p>
-<p class="p1"><span class="Apple-converted-space">          </span>td.textContent = d[key];</p>
-<p class="p1"><span class="Apple-converted-space">          </span>if (key === 'Movement') {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (d[key].startsWith('+')) td.className = 'up';</p>
-<p class="p1"><span class="Apple-converted-space">            </span>else if (d[key].startsWith('-')) td.className = 'down';</p>
-<p class="p1"><span class="Apple-converted-space">            </span>else td.className = 'nochange';</p>
-<p class="p1"><span class="Apple-converted-space">          </span>}</p>
-<p class="p1"><span class="Apple-converted-space">          </span>tr.appendChild(td);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">        </span>tbody.appendChild(tr);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>});</p>
-<p class="p1"><span class="Apple-converted-space">    </span>})</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.catch(err =&gt; console.error('Error loading CSV:', err));</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">// Initial load</p>
-<p class="p1">loadTable();</p>
-<p class="p2"><br></p>
-<p class="p1">// Auto-refresh every 5 minutes (300,000 ms)</p>
-<p class="p1">setInterval(loadTable, 300000);</p>
-<p class="p1">&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+
+<div id="loader" role="status" aria-live="polite">
+  <div class="loader-titles">
+    <div class="loader-top" data-title-top>FPL Draft 3</div>
+    <div class="loader-title" data-title>Tokyo Draft</div>
+  </div>
+  <img id="loader-logo" class="pulse" alt="">
+  <div class="loader-text" id="loader-text">Synchronizing Data Fast and Furiously...</div>
+  <div class="loader-bar"><div></div></div>
+  <button type="button" id="retry" class="retry" hidden>Try again</button>
+</div>
+
+<div id="app" hidden>
+  <header class="top">
+    <div class="top-row">
+      <div>
+        <div class="title-top" data-title-top>FPL Draft 3</div>
+        <div class="title" data-title>Tokyo Draft</div>
+        <div class="subtitle" id="subtitle"></div>
+      </div>
+      <div class="status" id="status"><span class="dot"></span><span id="status-text"></span></div>
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#table">Table</a>
+      <a href="#live">Live</a>
+      <a href="#teams">Teams</a>
+      <a href="#awards">Awards</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- TABLE -->
+    <section id="tab-table" class="tab">
+      <div class="tiles" id="tiles"></div>
+      <div class="card">
+        <div class="card-head">
+          <h1>Official standings</h1>
+          <span class="muted small" id="updated"></span>
+        </div>
+        <div class="grid-row head standings-cols"><span>Pos</span><span>Manager</span><span class="r">GW</span><span class="r">Total</span></div>
+        <div id="standings"></div>
+        <p class="note">The figure under each total is the gap to the place above. Tap a manager to see their team sheet.</p>
+      </div>
+      <div class="card pad">
+        <div class="card-head flush">
+          <h2>Rank progress</h2>
+          <span class="muted small">Top 3 highlighted</span>
+        </div>
+        <div class="chart-wrap" id="rank-chart"></div>
+      </div>
+    </section>
+
+    <!-- LIVE -->
+    <section id="tab-live" class="tab" hidden>
+      <div class="live-head">
+        <h1 id="live-title">Gameweek</h1>
+        <span class="muted small" id="live-refresh"></span>
+      </div>
+      <div class="split">
+        <div class="card">
+          <h2 class="mini-h">Live GW points</h2>
+          <div class="grid-row head mini gw-cols"><span>Manager</span><span class="r">Pts</span><span class="r">PTP</span></div>
+          <div id="live-gw"></div>
+        </div>
+        <div class="card">
+          <h2 class="mini-h">Live table</h2>
+          <div class="grid-row head mini lt-cols"><span>#</span><span>Manager</span><span class="r">Tot</span></div>
+          <div id="live-table"></div>
+        </div>
+      </div>
+      <p class="note flat" id="live-note"></p>
+      <div class="card pad">
+        <div class="card-head flush">
+          <h2>Provisional bonus</h2>
+          <span class="muted small">Matches in play</span>
+        </div>
+        <div id="bonus"></div>
+      </div>
+    </section>
+
+    <!-- TEAMS -->
+    <section id="tab-teams" class="tab" hidden>
+      <div class="chips" id="chips" role="group" aria-label="Choose manager"></div>
+      <div class="card pad">
+        <div class="team-head">
+          <div class="team-name">
+            <h1 id="team-manager"></h1>
+            <span class="muted" id="team-team"></span>
+          </div>
+          <div class="stepper">
+            <button type="button" id="gw-prev" aria-label="Previous gameweek"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg></button>
+            <span id="gw-label"></span>
+            <button type="button" id="gw-next" aria-label="Next gameweek"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg></button>
+          </div>
+        </div>
+        <div class="tiles three" id="team-tiles"></div>
+      </div>
+      <div id="pitch-wrap"></div>
+      <div class="key">
+        <div><span class="pill pill-done">6 pts</span>Finished</div>
+        <div><span class="pill pill-live">● 2 pts</span>Match in play</div>
+        <div><span class="pill pill-toplay">To play</span>Not kicked off</div>
+        <div><span class="pill pill-off">0 mins ▼</span>Autosubbed off</div>
+      </div>
+    </section>
+
+    <!-- AWARDS -->
+    <section id="tab-awards" class="tab" hidden>
+      <div class="card" id="motm"></div>
+      <div class="card" id="bench-card"></div>
+    </section>
+  </main>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
