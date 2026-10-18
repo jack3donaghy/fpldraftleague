@@ -40,7 +40,7 @@
       <a href="#table">Table</a>
       <a href="#live">Live</a>
       <a href="#teams">Teams</a>
-      <a href="#awards">Awards</a>
+      <a href="#stats">Stats</a>
     </nav>
   </header>
 
@@ -120,9 +120,30 @@
       </div>
     </section>
 
-    <!-- AWARDS -->
-    <section id="tab-awards" class="tab" hidden>
+    <!-- STATS -->
+    <section id="tab-stats" class="tab" hidden>
       <div class="card" id="motm"></div>
+      <div class="card">
+        <div class="card-head">
+          <h2>Form guide</h2>
+          <span class="muted small" id="form-note"></span>
+        </div>
+        <div class="grid-row head form-cols"><span>Manager</span><span class="r">Season</span><span class="r">Last 5</span><span class="r">Trend</span></div>
+        <div id="form"></div>
+        <p class="note">Average points per gameweek. ▲ means the last 5 are better than the season average.</p>
+      </div>
+      <div class="split">
+        <div class="card">
+          <h2 class="mini-h">Best gameweek</h2>
+          <div class="grid-row head mini rec-cols"><span>Manager</span><span class="r">GW</span><span class="r">Pts</span></div>
+          <div id="best"></div>
+        </div>
+        <div class="card">
+          <h2 class="mini-h">Worst gameweek</h2>
+          <div class="grid-row head mini rec-cols"><span>Manager</span><span class="r">GW</span><span class="r">Pts</span></div>
+          <div id="worst"></div>
+        </div>
+      </div>
       <div class="card" id="bench-card"></div>
     </section>
   </main>

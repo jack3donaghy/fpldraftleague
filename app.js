@@ -345,6 +345,7 @@
     renderLive();
     renderTeams();
     renderMotm();
+    renderForm();
     if (S.benchData) renderBench();
     route();
   }
@@ -615,6 +616,57 @@
     el.innerHTML = html;
   }
 
+  // ---------- Form guide and best / worst gameweeks (completed gameweeks only)
+  function completedGws() {
+    var last = S.finished ? S.gw : S.gw - 1;
+    var list = [];
+    for (var g = START; g <= last; g++) list.push(g);
+    return list;
+  }
+
+  function renderForm() {
+    var gws = completedGws();
+    if (!gws.length) {
+      var msg = '<p class="note">Appears once GW' + START + ' is complete.</p>';
+      $('#form').innerHTML = msg;
+      $('#best').innerHTML = $('#worst').innerHTML = '<p class="note">After GW' + START + '.</p>';
+      $('#form-note').textContent = '';
+      return;
+    }
+    var last5 = gws.slice(-5);
+    $('#form-note').textContent = gws.length === 1 ? 'GW' + gws[0] : 'GW' + gws[0] + '–GW' + gws[gws.length - 1];
+    var rows = S.managers.map(function (m) {
+      var pts = gws.map(function (g) { return gwPoints(m, g); });
+      var recent = pts.slice(-5);
+      var season = pts.reduce(function (a, b) { return a + b; }, 0) / pts.length;
+      var l5 = recent.reduce(function (a, b) { return a + b; }, 0) / recent.length;
+      var best = 0, worst = 0;
+      pts.forEach(function (p, i) { if (p > pts[best]) best = i; if (p < pts[worst]) worst = i; });
+      return {
+        m: m, season: Math.round(season * 10) / 10, l5: Math.round(l5 * 10) / 10,
+        best: { pts: pts[best], gw: gws[best] }, worst: { pts: pts[worst], gw: gws[worst] }
+      };
+    });
+    rows.sort(function (a, b) { return (b.l5 - a.l5) || (b.season - a.season) || a.m.name.localeCompare(b.m.name); });
+    var topL5 = rows[0].l5;
+    $('#form').innerHTML = rows.map(function (r) {
+      var t = r.l5 > r.season ? ['up', '▲'] : r.l5 < r.season ? ['down', '▼'] : ['level', '–'];
+      return '<div class="grid-row form-cols' + (r.l5 === topL5 && topL5 > 0 ? ' lead' : '') + '">' +
+        '<span class="nm">' + esc(r.m.name) + '</span><span class="s">' + r.season.toFixed(1) + '</span>' +
+        '<span class="v">' + r.l5.toFixed(1) + '</span><span class="trend ' + t[0] + '" aria-label="' + t[0] + '">' + t[1] + '</span></div>';
+    }).join('');
+    function rec(key, dir) {
+      var list = rows.slice().sort(function (a, b) { return dir * (b[key].pts - a[key].pts) || a.m.name.localeCompare(b.m.name); });
+      return list.map(function (r) {
+        return '<div class="grid-row rec-cols"><span class="nm">' + esc(r.m.name) + '</span><span class="gw">' + r[key].gw +
+          '</span><span class="big">' + r[key].pts + '</span></div>';
+      }).join('');
+    }
+    $('#best').innerHTML = rec('best', 1);
+    $('#worst').innerHTML = rec('worst', -1);
+    if (last5.length < 5) $('#form-note').textContent += ' · last 5 fills up by GW' + (START + 4);
+  }
+
   function loadBench() {
     if (S.benchData || S.benchLoading || S.gw < START) { if (S.gw < START) renderBench(); return; }
     S.benchLoading = true;
@@ -670,16 +722,17 @@
   }
 
   // ------------------------------------------------------------------ navigation & events
-  var TABS = ['table', 'live', 'teams', 'awards'];
+  var TABS = ['table', 'live', 'teams', 'stats'];
   function route() {
     var t = location.hash.slice(1);
+    if (t === 'awards') t = 'stats'; // old links still work
     if (TABS.indexOf(t) < 0) t = 'table';
     TABS.forEach(function (k) {
       $('#tab-' + k).hidden = k !== t;
       var a = document.querySelector('.tabs a[href="#' + k + '"]');
       if (k === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
-    if (t === 'awards') loadBench();
+    if (t === 'stats') loadBench();
   }
   window.addEventListener('hashchange', function () { route(); window.scrollTo(0, 0); });
 
