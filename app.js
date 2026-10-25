@@ -59,7 +59,7 @@
     players: {}, events: [],
     managers: [], standings: [],
     histories: {}, picks: {}, live: {}, fixtures: {}, fixtureList: {},
-    prevTotals: {}, phases: [], kitCodes: {}, teams: {},
+    prevTotals: {}, phases: [], kitCodes: {}, teams: {}, teamNames: {},
     season: null, seasonLoading: false,
     pf: { q: '', own: 'all', pos: 0 },
     bonusMemo: {},
@@ -86,7 +86,7 @@
             chance: e.chance_of_playing_next_round
           };
         });
-        (bs.teams || []).forEach(function (t) { S.teams[t.id] = t.short_name || t.name || ''; });
+        (bs.teams || []).forEach(function (t) { S.teams[t.id] = t.short_name || t.name || ''; if (t.name) S.teamNames[t.id] = t.name; });
         S.events = Array.isArray(bs.events) ? bs.events : ((bs.events && bs.events.data) || []);
         (bs.teams || []).forEach(function (t) { if (t.code != null) S.kitCodes[t.id] = t.code; });
         setLeague(league);
@@ -168,6 +168,7 @@
       (bs.teams || []).forEach(function (t) {
         if (t.code != null) codes[t.id] = t.code;
         if (!S.teams[t.id] && t.short_name) S.teams[t.id] = t.short_name;
+        if (!S.teamNames[t.id] && t.name) S.teamNames[t.id] = t.name;
       });
       Object.keys(codes).forEach(function (k) { if (S.kitCodes[k] == null) S.kitCodes[k] = codes[k]; });
       var list = (bs.phases || []).filter(function (p) { return p.name !== 'Overall'; })
@@ -831,16 +832,24 @@
     return own;
   }
 
+  // Lower-case, strip accents and punctuation so "odegaard" finds "Ødegaard"
+  function norm(str) {
+    return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/ø/g, 'o').replace(/æ/g, 'ae').replace(/ß/g, 'ss').replace(/ł/g, 'l').replace(/đ/g, 'd').replace(/ı/g, 'i')
+      .replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
   function renderPlayers() {
     var own = ownership();
-    var q = S.pf.q.trim().toLowerCase();
+    var words = norm(S.pf.q).split(' ').filter(Boolean);
     var list = Object.keys(S.players).map(function (id) { return S.players[id]; }).filter(function (p) {
       if (S.pf.pos && p.type !== S.pf.pos) return false;
       if (S.pf.own === 'owned' && !own[p.id]) return false;
       if (S.pf.own === 'free' && own[p.id]) return false;
-      if (q) {
-        var hay = (p.name + ' ' + p.full + ' ' + (S.teams[p.team] || '') + ' ' + (own[p.id] ? own[p.id].name : '')).toLowerCase();
-        if (hay.indexOf(q) < 0) return false;
+      if (words.length) {
+        var hay = norm(p.name + ' ' + p.full + ' ' + (S.teams[p.team] || '') + ' ' + (S.teamNames[p.team] || '') + ' ' + (own[p.id] ? own[p.id].name : ''));
+        // every word typed must appear somewhere, in any order ("mo salah", "saka arsenal")
+        if (!words.every(function (w) { return hay.indexOf(w) > -1; })) return false;
       }
       return true;
     }).sort(function (a, b) { return ((b.total || 0) - (a.total || 0)) || a.name.localeCompare(b.name); });
@@ -851,7 +860,7 @@
         esc(S.teams[p.team] || '') + ' · ' + (TYPES[p.type] || '') + (flagOf(p) ? ' · ' + esc(flagOf(p).label) : '') + '</span></div>' +
         (o ? '<a class="owner" href="#teams" data-entry="' + o.entryId + '">' + esc(o.name) + '</a>' : '<span class="owner free">Free agent</span>') +
         '<span class="v">' + (p.total != null ? p.total : '–') + '</span></div>';
-    }).join('') || '<p class="note">No players match.</p>';
+    }).join('') || '<p class="note">No players match' + (S.pf.own !== 'all' || S.pf.pos ? '. Try setting the filters back to All.' : '.') + '</p>';
     $('#pnote').textContent = list.length > LIMIT ? 'Showing the top ' + LIMIT + ' of ' + list.length + ' by season points. Search to narrow it down.'
       : list.length + ' player' + (list.length === 1 ? '' : 's') + '. Ownership is from the current gameweek\'s squads.';
     document.querySelectorAll('[data-own]').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-own') === S.pf.own); });
@@ -882,6 +891,15 @@
   $('#gw-prev').addEventListener('click', function () { if (S.view.gw > START) { S.view.gw--; renderTeams(); } });
   $('#gw-next').addEventListener('click', function () { if (S.view.gw < S.gw) { S.view.gw++; renderTeams(); } });
   $('#retry').addEventListener('click', function () { location.reload(); });
+
+  // Players tab: search box and filter buttons
+  $('#psearch').addEventListener('input', function (e) { S.pf.q = e.target.value; renderPlayers(); });
+  document.addEventListener('click', function (e) {
+    var o = e.target.closest('[data-own]');
+    if (o) { S.pf.own = o.getAttribute('data-own'); renderPlayers(); }
+    var p = e.target.closest('[data-pos]');
+    if (p) { S.pf.pos = +p.getAttribute('data-pos'); renderPlayers(); }
+  });
 
   // ---------- League song
   // The SoundCloud player is loaded quietly in the background when the page opens, so the
