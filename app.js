@@ -883,33 +883,68 @@
   $('#gw-next').addEventListener('click', function () { if (S.view.gw < S.gw) { S.view.gw++; renderTeams(); } });
   $('#retry').addEventListener('click', function () { location.reload(); });
 
-  // ---------- League song (SoundCloud player inside the page; closing it stops the music)
-  function songOpen() {
-    var src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(C.SONG_URL) +
-      '&auto_play=true&visual=false&color=%233DF5A0&hide_related=true&show_comments=false&show_reposts=false&show_teaser=false&buying=false&sharing=false&download=false';
-    $('#song-frame').innerHTML = '<iframe title="League song" width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay" src="' + esc(src) + '"></iframe>';
-    $('#song-bar').hidden = false;
-    $('#song-btn').setAttribute('aria-pressed', 'true');
-    document.body.classList.add('has-song');
+  // ---------- League song
+  // The SoundCloud player is loaded quietly in the background when the page opens, so the
+  // button can start it straight away. Closing it pauses the music.
+  var song = { widget: null, ready: false, wantPlay: false, playing: false, failed: false };
+
+  function songSrc(autoPlay) {
+    return 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(C.SONG_URL) + '&auto_play=' + autoPlay +
+      '&visual=false&color=%233DF5A0&hide_related=true&show_comments=false&show_reposts=false&show_teaser=false&buying=false&sharing=false&download=false';
   }
-  function songClose() {
-    $('#song-frame').innerHTML = '';
-    $('#song-bar').hidden = true;
-    $('#song-btn').setAttribute('aria-pressed', 'false');
-    document.body.classList.remove('has-song');
+  function songUi(playing) {
+    song.playing = playing;
+    $('#song-btn').setAttribute('aria-pressed', String(playing));
+    $('#song-btn').setAttribute('aria-label', playing ? 'Pause the league song' : 'Play the league song');
+  }
+  function songShow(show) {
+    $('#song-bar').classList.toggle('parked', !show);
+    document.body.classList.toggle('has-song', show);
+  }
+  function songPrepare() {
+    $('#song-frame').innerHTML = '<iframe id="song-iframe" title="League song" width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay" src="' + esc(songSrc(false)) + '"></iframe>';
+    $('#song-bar').hidden = false; // parked off-screen until the button is pressed
+    songShow(false);
+    var sc = document.createElement('script');
+    sc.src = 'https://w.soundcloud.com/player/api.js';
+    sc.onload = function () {
+      try {
+        var w = window.SC.Widget(document.getElementById('song-iframe'));
+        var E = window.SC.Widget.Events;
+        song.widget = w;
+        w.bind(E.READY, function () { song.ready = true; if (song.wantPlay) w.play(); });
+        w.bind(E.PLAY, function () { songUi(true); });
+        w.bind(E.PAUSE, function () { songUi(false); });
+        w.bind(E.FINISH, function () { songUi(false); });
+      } catch (e) { song.failed = true; }
+    };
+    sc.onerror = function () { song.failed = true; };
+    document.head.appendChild(sc);
+  }
+  function songPlay() {
+    songShow(true);
+    if (song.failed) { // fallback: reload the player set to start by itself
+      $('#song-iframe').src = songSrc(true);
+      songUi(true);
+      return;
+    }
+    song.wantPlay = true;
+    songUi(true);
+    if (song.ready) song.widget.play();
+  }
+  function songStop() {
+    song.wantPlay = false;
+    if (song.widget && song.ready) song.widget.pause();
+    else if (song.failed) $('#song-iframe').src = songSrc(false);
+    songUi(false);
+    songShow(false);
   }
   if (C.SONG_URL) {
     $('#song-btn').hidden = false;
-    $('#song-btn').addEventListener('click', function () { if ($('#song-bar').hidden) songOpen(); else songClose(); });
-    $('#song-close').addEventListener('click', songClose);
+    $('#song-btn').addEventListener('click', function () { if (song.playing) songStop(); else songPlay(); });
+    $('#song-close').addEventListener('click', songStop);
+    songPrepare();
   }
-  $('#psearch').addEventListener('input', function (e) { S.pf.q = e.target.value; renderPlayers(); });
-  document.addEventListener('click', function (e) {
-    var o = e.target.closest('[data-own]');
-    if (o) { S.pf.own = o.getAttribute('data-own'); renderPlayers(); }
-    var p = e.target.closest('[data-pos]');
-    if (p) { S.pf.pos = +p.getAttribute('data-pos'); renderPlayers(); }
-  });
 
   // ------------------------------------------------------------------ live refresh
   function scheduleRefresh() {

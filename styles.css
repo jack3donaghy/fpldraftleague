@@ -223,7 +223,8 @@ a.grid-row:hover { background: #FAF9F6; }
 .top-right { display: flex; align-items: center; gap: 8px; }
 .song-btn { width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.1); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: 0 0 auto; }
 .song-btn[aria-pressed="true"] { background: var(--mint); color: #10241A; }
-.song-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--header); padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; box-shadow: 0 -4px 16px rgba(0,0,0,.25); }
+.song-bar.parked { transform: translateY(110%); pointer-events: none; }
+.song-bar { transition: transform .25s ease; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--header); padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; box-shadow: 0 -4px 16px rgba(0,0,0,.25); }
 .song-frame { flex: 1; min-width: 0; max-width: 744px; margin: 0 auto; }
 .song-frame iframe { display: block; border-radius: 8px; background: #fff; }
 .song-close { width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.12); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: 0 0 auto; }
