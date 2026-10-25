@@ -17,6 +17,9 @@ window.CONFIG = {
   // Club kit images from the FPL website ({code} is filled in per club; keepers get "_1")
   KIT_URL: 'https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_{code}-110.png',
 
+  // League song: paste the SoundCloud track link (https://soundcloud.com/artist/track). Leave '' to hide the button.
+  SONG_URL: 'https://soundcloud.com/soundkimsun/teriyaki-boyz-tokyo-drift-ll-soundkim-ll',
+
   PTP_COUNT_IN_PLAY: true, // true: "to play" includes matches in progress; false: only not kicked off
   MIN_LOADER_MS: 2500,     // keep the loading screen up at least this long (milliseconds: 2500 = 2.5 seconds)
   REFRESH_SECONDS: 60      // how often live data refreshes during a gameweek

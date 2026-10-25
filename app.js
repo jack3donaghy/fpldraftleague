@@ -59,10 +59,11 @@
     players: {}, events: [],
     managers: [], standings: [],
     histories: {}, picks: {}, live: {}, fixtures: {}, fixtureList: {},
-    prevTotals: {}, phases: [], kitCodes: {},
+    prevTotals: {}, phases: [], kitCodes: {}, teams: {},
+    season: null, seasonLoading: false,
+    pf: { q: '', own: 'all', pos: 0 },
     bonusMemo: {},
     view: { entry: null, gw: null },
-    benchData: null, benchLoading: false,
     updated: null
   };
 
@@ -78,8 +79,14 @@
         S.gw = game.current_event || 0;
         S.finished = !!game.current_event_finished;
         (bs.elements || []).forEach(function (e) {
-          S.players[e.id] = { id: e.id, name: e.web_name, type: e.element_type, team: e.team };
+          S.players[e.id] = {
+            id: e.id, name: e.web_name, type: e.element_type, team: e.team,
+            full: ((e.first_name || '') + ' ' + (e.second_name || '')).trim(),
+            total: e.total_points, status: e.status || 'a', news: e.news || '',
+            chance: e.chance_of_playing_next_round
+          };
         });
+        (bs.teams || []).forEach(function (t) { S.teams[t.id] = t.short_name || t.name || ''; });
         S.events = Array.isArray(bs.events) ? bs.events : ((bs.events && bs.events.data) || []);
         (bs.teams || []).forEach(function (t) { if (t.code != null) S.kitCodes[t.id] = t.code; });
         setLeague(league);
@@ -158,7 +165,10 @@
     }
     return get('fpl/bootstrap-static').then(function (bs) {
       var codes = {};
-      (bs.teams || []).forEach(function (t) { if (t.code != null) codes[t.id] = t.code; });
+      (bs.teams || []).forEach(function (t) {
+        if (t.code != null) codes[t.id] = t.code;
+        if (!S.teams[t.id] && t.short_name) S.teams[t.id] = t.short_name;
+      });
       Object.keys(codes).forEach(function (k) { if (S.kitCodes[k] == null) S.kitCodes[k] = codes[k]; });
       var list = (bs.phases || []).filter(function (p) { return p.name !== 'Overall'; })
         .map(function (p) { return { name: p.name, start: p.start_event, stop: p.stop_event }; });
@@ -289,6 +299,43 @@
     return res;
   }
 
+  // Highest score any valid XI from the 15 could have made: 1 GK and at least
+  // 3 DEF, 2 MID and 1 FWD among the 10 outfielders.
+  function bestXI(picks, gw) {
+    var pl = picks.map(function (p) { var i = info(p.element, gw); return { t: i.p.type, pts: i.points }; });
+    var gk = pl.filter(function (x) { return x.t === 1; }).reduce(function (a, x) { return Math.max(a, x.pts); }, 0);
+    var out = pl.filter(function (x) { return x.t !== 1; });
+    var n = out.length, best = null, loose = null;
+    for (var mask = 0; mask < (1 << n); mask++) {
+      var c = 0, d = 0, m = 0, f = 0, s = 0;
+      for (var i = 0; i < n; i++) {
+        if (!(mask & (1 << i))) continue;
+        c++; s += out[i].pts;
+        if (out[i].t === 2) d++; else if (out[i].t === 3) m++; else if (out[i].t === 4) f++;
+      }
+      if (c !== Math.min(10, n)) continue;
+      if (loose === null || s > loose) loose = s;
+      if (d >= 3 && m >= 2 && f >= 1 && (best === null || s > best)) best = s;
+    }
+    return gk + (best !== null ? best : (loose || 0));
+  }
+
+  // Injury / availability flag from FPL's player status
+  function flagOf(p) {
+    if (!p) return null;
+    var out = ['i', 's', 'u', 'n'].indexOf(p.status) > -1 || p.chance === 0;
+    var doubt = !out && (p.status === 'd' || (p.chance != null && p.chance < 100));
+    if (!out && !doubt) return null;
+    var label = p.news || (out ? 'Unavailable' : 'Doubtful');
+    return { kind: out ? 'out' : 'doubt', label: label };
+  }
+  function flagBadge(p, inline) {
+    var f = flagOf(p);
+    if (!f) return '';
+    return '<span class="flag flag-' + f.kind + (inline ? ' inline' : '') + '" title="' + esc(f.label) + '" aria-label="' +
+      (f.kind === 'out' ? 'Unavailable: ' : 'Doubtful: ') + esc(f.label) + '">!</span>';
+  }
+
   function teamCalc(entryId, gw) {
     var picks = S.picks[entryId + ':' + gw] || [];
     if (!picks.length) return null;
@@ -307,7 +354,8 @@
       if (st === 'toPlay' || (C.PTP_COUNT_IN_PLAY && st === 'playing')) ptp++;
     });
     subs.benchLeft.forEach(function (id) { benchPts += info(id, gw).points; });
-    return { total: base + bonusPts, base: base, bonusPts: bonusPts, bonusPlayers: bonusPlayers, ptp: ptp, benchPts: benchPts, subs: subs, bonus: bonus };
+    var lost = Math.max(0, bestXI(picks, gw) - base);
+    return { total: base + bonusPts, base: base, bonusPts: bonusPts, bonusPlayers: bonusPlayers, ptp: ptp, benchPts: benchPts, lost: lost, subs: subs, bonus: bonus };
   }
 
   function liveGwPoints(m) {
@@ -346,7 +394,8 @@
     renderTeams();
     renderMotm();
     renderForm();
-    if (S.benchData) renderBench();
+    if (S.season) renderSeason();
+    renderPlayers();
     route();
   }
 
@@ -457,7 +506,6 @@
     if (S.gw < START) {
       $('#live-title').textContent = 'Pre-season';
       $('#live-gw').innerHTML = $('#live-table').innerHTML = '<p class="note">Scoring starts GW' + START + '.</p>';
-      $('#bonus').innerHTML = '<p class="empty">No matches in play.</p>';
       $('#live-note').textContent = '';
       return;
     }
@@ -480,15 +528,6 @@
     }).join('');
     $('#live-note').textContent = 'PTP = starters whose match ' + (C.PTP_COUNT_IN_PLAY ? "hasn't finished" : "hasn't kicked off") +
       '. The live table includes provisional bonus and projected autosubs, and becomes official once FPL confirms the gameweek.';
-    var withBonus = rows.filter(function (r) { return r.calc && r.calc.bonusPts > 0; })
-      .sort(function (a, b) { return b.calc.bonusPts - a.calc.bonusPts; });
-    var others = rows.length - withBonus.length;
-    $('#bonus').innerHTML = (withBonus.length ? withBonus.map(function (r) {
-      return '<div class="bonus-row"><div><b>' + esc(r.m.name) + '</b><span>' + esc(r.calc.bonusPlayers.join(' · ')) +
-        '</span></div><span class="pts">+' + r.calc.bonusPts + '</span></div>';
-    }).join('') : '') +
-      (others ? '<div class="bonus-row"><div><b>' + (withBonus.length ? 'Everyone else' : 'No provisional bonus') + '</b><span>' +
-        (S.finished ? 'Bonus is confirmed for this gameweek' : 'Nothing from matches in play yet') + '</span></div><span class="pts" style="color:#8E8892">0</span></div>' : '');
   }
 
   // ---------- Teams
@@ -526,7 +565,7 @@
     $('#team-tiles').innerHTML =
       tile('Points', '', calc.total).replace('<div class="tile-name"></div>', '') +
       tile('To play', '', calc.ptp).replace('<div class="tile-name"></div>', '') +
-      tile('Bench pts', '', calc.benchPts).replace('<div class="tile-name"></div>', '');
+      tile('Lost on bench', '', calc.lost).replace('<div class="tile-name"></div>', '');
 
     var picks = S.picks[m.entryId + ':' + gw];
     var starters = picks.filter(function (p) { return p.position <= 11; }).map(function (p) { return p.element; });
@@ -539,6 +578,15 @@
       '</div></section>' +
       '<section class="bench" aria-label="Bench"><h2>Bench</h2><div class="line">' +
       bench.map(function (id) { return playerTile(id, gw, calc, true); }).join('') + '</div></section>';
+    // Injury news for the squad (FPL's latest news, so it describes now, not the gameweek being viewed)
+    var flagged = starters.concat(bench).map(function (id) { return S.players[id]; })
+      .filter(function (p) { return flagOf(p); });
+    if (flagged.length) {
+      html += '<section class="card pad news" aria-label="Injury news"><h2>Injury news</h2>' +
+        flagged.map(function (p) {
+          return '<div class="news-row">' + flagBadge(p, true) + '<div><b>' + esc(p.name) + '</b><span>' + esc(flagOf(p).label) + '</span></div></div>';
+        }).join('') + '</section>';
+    }
     $('#pitch-wrap').innerHTML = html;
   }
 
@@ -571,7 +619,9 @@
     else if (i.status === 'playing') pill = '<span class="pill pill-live">● ' + pts + ' pts' + bonusTxt + '</span>';
     else pill = '<span class="pill pill-done">' + pts + ' pts</span>';
     var label = esc(i.p.name) + ', ' + (TYPES[i.p.type] || '') + (isBench ? ', bench' : '');
-    return '<div class="pl' + (off ? ' off' : '') + '" title="' + label + '">' + shirt(i.p, isBench) +
+    var f = flagOf(i.p);
+    if (f) label += ' – ' + esc(f.label);
+    return '<div class="pl' + (off ? ' off' : '') + '" title="' + label + '">' + flagBadge(i.p) + shirt(i.p, isBench) +
       '<span class="nm">' + esc(i.p.name) + '</span>' + pill + '</div>';
   }
 
@@ -667,62 +717,149 @@
     if (last5.length < 5) $('#form-note').textContent += ' · last 5 fills up by GW' + (START + 4);
   }
 
-  function loadBench() {
-    if (S.benchData || S.benchLoading || S.gw < START) { if (S.gw < START) renderBench(); return; }
-    S.benchLoading = true;
-    $('#bench-card').innerHTML = '<div class="card-head"><h2>Left on the bench</h2></div><p class="note">Loading bench scores…</p>';
+  // ---------- Season-long squad stats (loaded when the Stats tab is opened)
+  // Per gameweek: points lost on the bench (best valid XI minus actual XI) and
+  // each manager's points by player, used for Squad MVPs.
+  function seasonRow(gw) {
+    var row = { lost: {}, contrib: {} };
+    S.managers.forEach(function (m) {
+      var c = teamCalc(m.entryId, gw);
+      row.lost[m.entryId] = c ? c.lost : 0;
+      var by = {};
+      if (c) c.subs.lineup.forEach(function (id) { by[id] = info(id, gw).points; });
+      row.contrib[m.entryId] = by;
+    });
+    return row;
+  }
+
+  function loadSeason() {
+    if (S.gw < START) { renderSeason(); return; }
+    if (S.season || S.seasonLoading) return;
+    S.seasonLoading = true;
+    $('#bench-card').innerHTML = '<div class="card-head"><h2>Points lost on the bench</h2></div><p class="note">Loading…</p>';
+    $('#mvp-card').innerHTML = '<div class="card-head"><h2>Squad MVPs</h2></div><p class="note">Loading…</p>';
     var gws = [];
     for (var g = START; g <= S.gw; g++) gws.push(g);
     var data = {};
     mapLimit(gws, 2, function (gw) {
       var finishedGw = gw < S.gw || S.finished;
-      var cached = finishedGw ? lsGet(LS + 'bench:' + gw) : null;
-      if (cached) { data[gw] = cached; return null; }
+      var cached = finishedGw ? lsGet(LS + 'season:' + gw) : null;
+      if (cached && cached.lost && cached.contrib) { data[gw] = cached; return null; }
       return loadGw(gw).then(function () {
-        var row = {};
-        S.managers.forEach(function (m) { var c = teamCalc(m.entryId, gw); row[m.entryId] = c ? c.benchPts : 0; });
-        data[gw] = row;
-        if (finishedGw) lsSet(LS + 'bench:' + gw, row);
+        data[gw] = seasonRow(gw);
+        if (finishedGw) lsSet(LS + 'season:' + gw, data[gw]);
       });
     }).then(function () {
-      S.benchData = data; S.benchLoading = false; renderBench();
+      S.season = data; S.seasonLoading = false; renderSeason();
     }).catch(function () {
-      S.benchLoading = false;
-      $('#bench-card').innerHTML = '<div class="card-head"><h2>Left on the bench</h2></div><p class="note">Couldn\'t load bench scores. Reopen this tab to try again.</p>';
+      S.seasonLoading = false;
+      $('#bench-card').innerHTML = '<div class="card-head"><h2>Points lost on the bench</h2></div><p class="note">Couldn\'t load. Reopen this tab to try again.</p>';
+      $('#mvp-card').innerHTML = '';
     });
   }
 
-  function renderBench() {
-    var el = $('#bench-card');
-    var head = '<div class="card-head" style="flex-direction:column;align-items:flex-start;gap:4px"><h2>Left on the bench</h2>' +
-      '<span class="muted" style="font-size:14px">Points scored by bench players who never came on. Season total, GW' + START + ' onwards.</span></div>';
-    if (!S.benchData) { el.innerHTML = head + '<p class="note">Bench scores load when you open this tab.</p>'; return; }
+  function seasonRows() {
+    // the gameweek in progress is recalculated each time so it stays current
+    var rows = {};
+    Object.keys(S.season || {}).forEach(function (g) {
+      rows[g] = (+g === S.gw && !S.finished) ? seasonRow(+g) : S.season[g];
+    });
+    return rows;
+  }
+
+  function renderSeason() {
+    var head = '<div class="card-head stack"><h2>Points lost on the bench</h2>' +
+      '<span class="muted">How many more points your best possible XI would have scored than the team you played. ' +
+      'The best XI keeps a legal formation: 1 GK and at least 3 DEF, 2 MID and 1 FWD. Season total from GW' + START + '.</span></div>';
+    var mvpHead = '<div class="card-head stack"><h2>Squad MVPs</h2>' +
+      '<span class="muted">Each manager\'s top scorer for them (points while in the XI) and his share of their total.</span></div>';
+    if (!S.season) {
+      $('#bench-card').innerHTML = head + '<p class="note">' + (S.gw < START ? 'Starts GW' + START + '.' : 'Loads when you open this tab.') + '</p>';
+      $('#mvp-card').innerHTML = mvpHead + '<p class="note">' + (S.gw < START ? 'Starts GW' + START + '.' : 'Loads when you open this tab.') + '</p>';
+      return;
+    }
+    var rows = seasonRows();
+    var gws = Object.keys(rows);
+
+    // Points lost on the bench
     var totals = S.managers.map(function (m) {
       var t = 0;
-      Object.keys(S.benchData).forEach(function (g) {
-        // the live gameweek is recalculated so it stays current
-        var v = (+g === S.gw && !S.finished) ? ((teamCalc(m.entryId, S.gw) || {}).benchPts || 0) : (S.benchData[g][m.entryId] || 0);
-        t += v;
-      });
+      gws.forEach(function (g) { t += rows[g].lost[m.entryId] || 0; });
       return { m: m, pts: t };
     }).sort(function (a, b) { return (b.pts - a.pts) || a.m.name.localeCompare(b.m.name); });
     var worst = null;
-    Object.keys(S.benchData).forEach(function (g) {
+    gws.forEach(function (g) {
       S.managers.forEach(function (m) {
-        var v = S.benchData[g][m.entryId] || 0;
+        var v = rows[g].lost[m.entryId] || 0;
         if (!worst || v > worst.v) worst = { v: v, m: m, gw: g };
       });
     });
-    el.innerHTML = head +
+    $('#bench-card').innerHTML = head +
       (worst && worst.v > 0 ? '<div class="worst"><div><span class="section-lbl">Worst single week</span><b>' + esc(worst.m.name) + ' · GW' + worst.gw +
         '</b></div><span class="v">' + worst.v + '</span></div>' : '') +
       totals.map(function (x) {
         return '<div class="rank-row"><span class="n">' + rankOf(totals, x.pts, 'pts') + '</span><span class="nm">' + esc(x.m.name) + '</span><span class="v">' + x.pts + '</span></div>';
-      }).join('') + '<p class="note">Includes projected autosubs for the gameweek in progress.</p>';
+      }).join('') + '<p class="note">The gameweek in progress counts as it stands, including projected autosubs.</p>';
+
+    // Squad MVPs
+    var mvps = S.managers.map(function (m) {
+      var by = {}, total = 0;
+      gws.forEach(function (g) {
+        var c = rows[g].contrib[m.entryId] || {};
+        Object.keys(c).forEach(function (id) { by[id] = (by[id] || 0) + c[id]; total += c[id]; });
+      });
+      var top = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; })[0];
+      var pts = top ? by[top] : 0;
+      return { m: m, p: S.players[top], pts: pts, share: total > 0 ? pts / total : 0 };
+    }).sort(function (a, b) { return (b.share - a.share) || a.m.name.localeCompare(b.m.name); });
+    $('#mvp-card').innerHTML = mvpHead +
+      '<div class="grid-row head mvp-cols"><span>Manager · MVP</span><span class="r">Pts</span><span class="r">Share</span></div>' +
+      mvps.map(function (x) {
+        var pName = x.p ? esc(x.p.name) + ' <span class="muted">' + esc(S.teams[x.p.team] || '') + '</span>' : '–';
+        return '<div class="grid-row mvp-cols"><div class="who"><b>' + esc(x.m.name) + '</b><span>' + pName + '</span></div>' +
+          '<span class="v">' + x.pts + '</span><span class="v">' + Math.round(x.share * 100) + '%</span></div>';
+      }).join('') + '<p class="note">Sorted by share: who relies most on one player.</p>';
+  }
+
+  // ---------- Players (who owns who)
+  function ownership() {
+    var own = {};
+    if (S.gw < START) return own;
+    S.managers.forEach(function (m) {
+      (S.picks[m.entryId + ':' + S.gw] || []).forEach(function (p) { own[p.element] = m; });
+    });
+    return own;
+  }
+
+  function renderPlayers() {
+    var own = ownership();
+    var q = S.pf.q.trim().toLowerCase();
+    var list = Object.keys(S.players).map(function (id) { return S.players[id]; }).filter(function (p) {
+      if (S.pf.pos && p.type !== S.pf.pos) return false;
+      if (S.pf.own === 'owned' && !own[p.id]) return false;
+      if (S.pf.own === 'free' && own[p.id]) return false;
+      if (q) {
+        var hay = (p.name + ' ' + p.full + ' ' + (S.teams[p.team] || '') + ' ' + (own[p.id] ? own[p.id].name : '')).toLowerCase();
+        if (hay.indexOf(q) < 0) return false;
+      }
+      return true;
+    }).sort(function (a, b) { return ((b.total || 0) - (a.total || 0)) || a.name.localeCompare(b.name); });
+    var LIMIT = 60;
+    $('#plist').innerHTML = list.slice(0, LIMIT).map(function (p) {
+      var o = own[p.id];
+      return '<div class="grid-row pl-cols"><div class="who"><b>' + flagBadge(p, true) + esc(p.name) + '</b><span>' +
+        esc(S.teams[p.team] || '') + ' · ' + (TYPES[p.type] || '') + (flagOf(p) ? ' · ' + esc(flagOf(p).label) : '') + '</span></div>' +
+        (o ? '<a class="owner" href="#teams" data-entry="' + o.entryId + '">' + esc(o.name) + '</a>' : '<span class="owner free">Free agent</span>') +
+        '<span class="v">' + (p.total != null ? p.total : '–') + '</span></div>';
+    }).join('') || '<p class="note">No players match.</p>';
+    $('#pnote').textContent = list.length > LIMIT ? 'Showing the top ' + LIMIT + ' of ' + list.length + ' by season points. Search to narrow it down.'
+      : list.length + ' player' + (list.length === 1 ? '' : 's') + '. Ownership is from the current gameweek\'s squads.';
+    document.querySelectorAll('[data-own]').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-own') === S.pf.own); });
+    document.querySelectorAll('[data-pos]').forEach(function (b) { b.setAttribute('aria-pressed', +b.getAttribute('data-pos') === S.pf.pos); });
   }
 
   // ------------------------------------------------------------------ navigation & events
-  var TABS = ['table', 'live', 'teams', 'stats'];
+  var TABS = ['table', 'live', 'teams', 'players', 'stats'];
   function route() {
     var t = location.hash.slice(1);
     if (t === 'awards') t = 'stats'; // old links still work
@@ -732,7 +869,7 @@
       var a = document.querySelector('.tabs a[href="#' + k + '"]');
       if (k === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
-    if (t === 'stats') loadBench();
+    if (t === 'stats') loadSeason();
   }
   window.addEventListener('hashchange', function () { route(); window.scrollTo(0, 0); });
 
@@ -745,6 +882,34 @@
   $('#gw-prev').addEventListener('click', function () { if (S.view.gw > START) { S.view.gw--; renderTeams(); } });
   $('#gw-next').addEventListener('click', function () { if (S.view.gw < S.gw) { S.view.gw++; renderTeams(); } });
   $('#retry').addEventListener('click', function () { location.reload(); });
+
+  // ---------- League song (SoundCloud player inside the page; closing it stops the music)
+  function songOpen() {
+    var src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(C.SONG_URL) +
+      '&auto_play=true&visual=false&color=%233DF5A0&hide_related=true&show_comments=false&show_reposts=false&show_teaser=false&buying=false&sharing=false&download=false';
+    $('#song-frame').innerHTML = '<iframe title="League song" width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay" src="' + esc(src) + '"></iframe>';
+    $('#song-bar').hidden = false;
+    $('#song-btn').setAttribute('aria-pressed', 'true');
+    document.body.classList.add('has-song');
+  }
+  function songClose() {
+    $('#song-frame').innerHTML = '';
+    $('#song-bar').hidden = true;
+    $('#song-btn').setAttribute('aria-pressed', 'false');
+    document.body.classList.remove('has-song');
+  }
+  if (C.SONG_URL) {
+    $('#song-btn').hidden = false;
+    $('#song-btn').addEventListener('click', function () { if ($('#song-bar').hidden) songOpen(); else songClose(); });
+    $('#song-close').addEventListener('click', songClose);
+  }
+  $('#psearch').addEventListener('input', function (e) { S.pf.q = e.target.value; renderPlayers(); });
+  document.addEventListener('click', function (e) {
+    var o = e.target.closest('[data-own]');
+    if (o) { S.pf.own = o.getAttribute('data-own'); renderPlayers(); }
+    var p = e.target.closest('[data-pos]');
+    if (p) { S.pf.pos = +p.getAttribute('data-pos'); renderPlayers(); }
+  });
 
   // ------------------------------------------------------------------ live refresh
   function scheduleRefresh() {
